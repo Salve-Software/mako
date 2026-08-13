@@ -9,6 +9,7 @@ import { useSelectedDevice } from './shared/store/device.store.js'
 import { useIsSearchBarOpen } from './shared/store/search-bar.store.js'
 import { useDeviceSelectorStore, useIsDeviceSelectorOpen } from './shared/store/device-selector.store.js'
 import { DeviceSelector } from './shared/components/device-selector/index.js'
+import { useMouseReporting } from './shared/hooks/use-mouse-reporting.js'
 import { DashboardContainer } from './modules/dashboard/ui/containers/dashboard-container/index.js'
 import { JsLogsContainer } from './modules/js-logs/ui/containers/js-logs-container/index.js'
 import { NetworkContainer } from './modules/network/ui/containers/network-container/index.js'
@@ -24,6 +25,8 @@ export function App() {
   const appName = useSelectedDevice()?.project?.appName
   const isSearchBarOpen = useIsSearchBarOpen()
   const isDeviceSelectorOpen = useIsDeviceSelectorOpen()
+
+  useMouseReporting()
 
   const logoColor = useMemo(
     () => (appName ? pickRandomColor() : DEFAULT_LOGO_COLOR),
@@ -49,7 +52,7 @@ export function App() {
   return (
     <Box flexDirection="column" height="100%" paddingTop={1}>
       <AsciiLogo color={logoColor} />
-      <TabBar active={activeTab} />
+      <TabBar active={activeTab} onSelect={setActiveTab} />
       {isDeviceSelectorOpen
         ? <DeviceSelector />
         : null
