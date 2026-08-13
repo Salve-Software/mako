@@ -1,6 +1,7 @@
 /** @jsxRuntime automatic */
 /** @jsxImportSource react */
 import { Box, Text } from 'ink'
+import { Clickable } from '../clickable/index.js'
 
 export interface FilterChip {
   id: string
@@ -19,9 +20,10 @@ interface FilterBarProps {
   active: Record<string, Set<string>>
   focusedGroupIndex: number
   focusedChipIndex: number
+  onToggle?: (groupId: string, chipId: string) => void
 }
 
-export function FilterBar({ groups, active, focusedGroupIndex, focusedChipIndex }: FilterBarProps) {
+export function FilterBar({ groups, active, focusedGroupIndex, focusedChipIndex, onToggle }: FilterBarProps) {
   return (
     <Box flexDirection="column">
       {groups.map((group, groupIndex) =>
@@ -30,9 +32,8 @@ export function FilterBar({ groups, active, focusedGroupIndex, focusedChipIndex 
           {group.chips.map((chip, chipIndex) => {
             const isOn = active[group.id]?.has(chip.id) ?? false
             const isFocused = groupIndex === focusedGroupIndex && chipIndex === focusedChipIndex
-            return (
+            const label = (
               <Text
-                key={chip.id}
                 color={isOn ? chip.color ?? 'cyan' : 'gray'}
                 dimColor={!isOn}
                 inverse={isFocused}
@@ -40,6 +41,12 @@ export function FilterBar({ groups, active, focusedGroupIndex, focusedChipIndex 
                 {isOn ? '◉' : '○'} {chip.label}
               </Text>
             )
+            return onToggle
+              ?
+              <Clickable key={chip.id} onClick={() => onToggle(group.id, chip.id)}>
+                {label}
+              </Clickable>
+              : <Box key={chip.id}>{label}</Box>
           })}
         </Box>
       )}

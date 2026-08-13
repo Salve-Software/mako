@@ -4,6 +4,7 @@ import { Box, Text, useInput } from 'ink'
 import { useEffect, useState } from 'react'
 import { useDevices, useSelectedDeviceId, useDeviceStore } from '../../store/device.store.js'
 import { useDeviceSelectorStore } from '../../store/device-selector.store.js'
+import { Clickable } from '../clickable/index.js'
 
 export function DeviceSelector() {
   const devices = useDevices()
@@ -14,6 +15,11 @@ export function DeviceSelector() {
     const selectedIndex = devices.findIndex((d) => d.device.deviceId === selectedDeviceId)
     setFocusedIndex(selectedIndex >= 0 ? selectedIndex : 0)
   }, [])
+
+  const selectDevice = (deviceId: string) => {
+    useDeviceStore.getState().selectDevice(deviceId)
+    useDeviceSelectorStore.getState().close()
+  }
 
   useInput((_input, key) => {
     if (key.escape) {
@@ -30,10 +36,7 @@ export function DeviceSelector() {
     }
     if (key.return) {
       const target = devices[focusedIndex]
-      if (target) {
-        useDeviceStore.getState().selectDevice(target.device.deviceId)
-        useDeviceSelectorStore.getState().close()
-      }
+      if (target) selectDevice(target.device.deviceId)
     }
   })
 
@@ -46,18 +49,20 @@ export function DeviceSelector() {
         : null
       }
       {devices.map((entry, index) =>
-        <Box key={entry.device.deviceId}>
-          <Text color={entry.connected ? 'green' : 'gray'}>{entry.connected ? '● ' : '○ '}</Text>
-          <Text
-            bold={index === focusedIndex}
-            color={index === focusedIndex ? 'cyan' : undefined}
-            inverse={entry.device.deviceId === selectedDeviceId}
-          >
-            {entry.device.deviceName} ({entry.device.platform})
-          </Text>
-        </Box>
+        <Clickable key={entry.device.deviceId} onClick={() => selectDevice(entry.device.deviceId)}>
+          <Box>
+            <Text color={entry.connected ? 'green' : 'gray'}>{entry.connected ? '● ' : '○ '}</Text>
+            <Text
+              bold={index === focusedIndex}
+              color={index === focusedIndex ? 'cyan' : undefined}
+              inverse={entry.device.deviceId === selectedDeviceId}
+            >
+              {entry.device.deviceName} ({entry.device.platform})
+            </Text>
+          </Box>
+        </Clickable>
       )}
-      <Text dimColor>↑↓ navigate · enter select · esc close</Text>
+      <Text dimColor>↑↓ navigate · enter select · click a device · esc close</Text>
     </Box>
   )
 }
