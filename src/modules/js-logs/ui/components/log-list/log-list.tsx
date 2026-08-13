@@ -1,6 +1,8 @@
 /** @jsxRuntime automatic */
 /** @jsxImportSource react */
 import { Box, Text } from 'ink'
+import type { DOMElement } from 'ink'
+import { forwardRef } from 'react'
 import type { LogEvent } from '@salve-software/salvetron-types'
 import { LogRow } from '../../../../../shared/components/log-row/index.js'
 
@@ -13,12 +15,14 @@ interface LogListProps {
   maxMessageWidth?: number
 }
 
-export function LogList({ logs, visibleRows, selectedIndex, scrollOffset, showHeader = true, maxMessageWidth }: LogListProps) {
+export const LogList = forwardRef<DOMElement, LogListProps>(function LogList(
+  { logs, visibleRows, selectedIndex, scrollOffset, showHeader = true, maxMessageWidth }, ref,
+) {
   const visible = logs.slice(scrollOffset, scrollOffset + visibleRows)
 
   return (
-    <Box flexDirection="column">
-      {showHeader ? <Text color="gray" dimColor>{logs.length} logs · ↑↓ navigate</Text> : null}
+    <Box ref={ref} flexDirection="column">
+      {showHeader ? <Text color="gray" dimColor>{logs.length} logs · ↑↓ navigate · click to select</Text> : null}
       {visible.map((log, i) => {
         const absoluteIndex = scrollOffset + i
         const isSelected = absoluteIndex === selectedIndex
@@ -31,4 +35,4 @@ export function LogList({ logs, visibleRows, selectedIndex, scrollOffset, showHe
       })}
     </Box>
   )
-}
+})
