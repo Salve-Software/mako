@@ -1,8 +1,11 @@
 /** @jsxRuntime automatic */
 /** @jsxImportSource react */
 import { Box, Text } from 'ink'
+import type { DOMElement } from 'ink'
+import { forwardRef } from 'react'
 import type { NativeLogEvent } from '@salve-software/salvetron-types'
 import type { CopyFeedback } from '../../../../../shared/hooks/use-detail-panel.js'
+import { Clickable } from '../../../../../shared/components/clickable/index.js'
 
 const LEVEL_COLOR: Record<string, string> = {
   error: 'red', warn: 'yellow', info: 'cyan', debug: 'gray', log: 'white',
@@ -15,9 +18,12 @@ interface NativeLogDetailProps {
   metaScrollOffset: number
   metaVisibleRows: number
   copyFeedback?: CopyFeedback | null
+  onCopy: () => void
 }
 
-export function NativeLogDetail({ log, width, metaLines, metaScrollOffset, metaVisibleRows, copyFeedback }: NativeLogDetailProps) {
+export const NativeLogDetail = forwardRef<DOMElement, NativeLogDetailProps>(function NativeLogDetail(
+  { log, width, metaLines, metaScrollOffset, metaVisibleRows, copyFeedback, onCopy }, ref,
+) {
   const color = LEVEL_COLOR[log.level] ?? 'white'
   const time = new Date(log.timestamp).toLocaleTimeString('en', { hour12: false })
   const visibleLines = metaLines.slice(metaScrollOffset, metaScrollOffset + metaVisibleRows)
@@ -25,6 +31,7 @@ export function NativeLogDetail({ log, width, metaLines, metaScrollOffset, metaV
 
   return (
     <Box
+      ref={ref}
       flexDirection="column"
       borderStyle="single"
       borderColor="gray"
@@ -48,12 +55,16 @@ export function NativeLogDetail({ log, width, metaLines, metaScrollOffset, metaV
       {metaLines.length > 0
         ?
         <Box flexDirection="column">
-          <Text color="whiteBright" dimColor>
-            {'── metadata'}
-            {canScroll ? `  [ = up   ] = down  ·  line ${metaScrollOffset + 1} of ${metaLines.length}` : ''}
-            {'  ·  c copy'}
-            {' ──'}
-          </Text>
+          <Box>
+            <Text color="whiteBright" dimColor>
+              {'── metadata'}
+              {canScroll ? `  [ = up   ] = down  ·  line ${metaScrollOffset + 1} of ${metaLines.length}  ·  ` : '  ·  '}
+            </Text>
+            <Clickable onClick={onCopy}>
+              <Text color="whiteBright" dimColor underline>c copy</Text>
+            </Clickable>
+            <Text color="whiteBright" dimColor>{' ──'}</Text>
+          </Box>
           {visibleLines.map((line, i) => (
             <Text key={i}>{line}</Text>
           ))}
@@ -62,4 +73,4 @@ export function NativeLogDetail({ log, width, metaLines, metaScrollOffset, metaV
       }
     </Box>
   )
-}
+})
