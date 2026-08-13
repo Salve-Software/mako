@@ -26,6 +26,13 @@ const DETAIL_FIXED_ROWS = 5
 const MIN_LIST_ROWS = 4
 const BAR_BORDER_ROWS = 2
 const BAR_CHROME_COLS = 4
+// Ink doesn't clip overflow by default: if computed content height ever
+// exactly equals (or exceeds) the terminal's row count, the terminal
+// scrolls to accommodate the last line, which silently shifts every mouse
+// coordinate's row-1 reference (see getAbsoluteLayout). A fixed row-count
+// budget like OVERHEAD_ROWS is inherently an estimate, so this margin keeps
+// a safety buffer rather than relying on that estimate being exact.
+const SAFETY_MARGIN_ROWS = 2
 
 export function NetworkContainer() {
   const [cols, rows] = useTerminalSize()
@@ -41,7 +48,7 @@ export function NetworkContainer() {
     groups: NETWORK_FILTER_GROUPS,
     isActive: !isDeviceSelectorOpen,
   })
-  const { active } = useFilterChips({
+  const { active, toggle } = useFilterChips({
     groups: NETWORK_FILTER_GROUPS,
     focusedGroupIndex,
     focusedChipIndex,
@@ -59,7 +66,7 @@ export function NetworkContainer() {
 
   const barRows = isOpen ? BAR_BORDER_ROWS + 1 + NETWORK_FILTER_GROUPS.length + 1 : 0
   const clearRows = clearPending ? 1 : 0
-  const availableRows = rows - OVERHEAD_ROWS - barRows - clearRows
+  const availableRows = rows - OVERHEAD_ROWS - barRows - clearRows - SAFETY_MARGIN_ROWS
   const detailHeight = Math.max(DETAIL_FIXED_ROWS + 2, availableRows - MIN_LIST_ROWS)
   const bodyVisibleRows = detailHeight - DETAIL_FIXED_ROWS
 
@@ -75,7 +82,7 @@ export function NetworkContainer() {
     return log ? buildCurlCommand(log) : ''
   }, [])
 
-  const { detailOpen, detailScrollOffset, resetDetailScroll, copyFeedback } = useDetailPanel({
+  const { detailOpen, detailScrollOffset, resetDetailScroll, copyFeedback, copyBody, copyExtra, detailRef, openDetail } = useDetailPanel({
     linesRef: bodyLinesRef,
     visibleRows: bodyVisibleRows,
     scrollStep: 5,
@@ -88,10 +95,12 @@ export function NetworkContainer() {
     ? Math.max(MIN_LIST_ROWS, availableRows - detailHeight)
     : availableRows
 
-  const { selectedIndex, scrollOffset } = useListNavigation({
+  const { selectedIndex, scrollOffset, listRef } = useListNavigation({
     count: filtered.length,
     visibleRows: listRows,
     isActive: !isOpen && !isDeviceSelectorOpen,
+    headerRows: 1,
+    onRowClick: openDetail,
   })
 
   const selectedLog = filtered[selectedIndex] ?? null
@@ -116,11 +125,12 @@ export function NetworkContainer() {
             active={active}
             focusedGroupIndex={focusedGroupIndex}
             focusedChipIndex={focusedChipIndex}
+            onToggle={toggle}
           />
         </Box>
         : null
       }
-      <Box flexGrow={1} flexDirection="column">
+      <Box ref={listRef} flexGrow={1} flexDirection="column">
         <NetworkTableHeader />
         {visible.map((log, i) => {
           const absoluteIndex = scrollOffset + i
@@ -139,12 +149,15 @@ export function NetworkContainer() {
       {detailOpen && selectedLog
         ?
         <NetworkDetail
+          ref={detailRef}
           log={selectedLog}
           width={cols}
           bodyLines={bodyLines}
           bodyScrollOffset={detailScrollOffset}
           bodyVisibleRows={bodyVisibleRows}
           copyFeedback={copyFeedback}
+          onCopy={copyBody}
+          onCopyCurl={copyExtra}
         />
         : null
       }
