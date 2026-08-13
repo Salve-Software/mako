@@ -33,6 +33,7 @@ export function DashboardContainer() {
     listColWidth,
     listVisibleRows: logsPanelRows,
     detailVisibleRows: detailBodyVisibleRows,
+    onFocus: () => setFocused("logs"),
   });
   const network = useNetworkPanelSection({
     focused: focused === "network",
@@ -40,6 +41,7 @@ export function DashboardContainer() {
     listColWidth,
     listVisibleRows: networkPanelRows,
     detailVisibleRows: detailBodyVisibleRows,
+    onFocus: () => setFocused("network"),
   });
   const native = useNativePanelSection({
     focused: focused === "native",
@@ -47,6 +49,7 @@ export function DashboardContainer() {
     listColWidth,
     listVisibleRows: nativePanelRows,
     detailVisibleRows: detailBodyVisibleRows,
+    onFocus: () => setFocused("native"),
   });
 
   const focusedDetailOpen =
@@ -83,6 +86,7 @@ export function DashboardContainer() {
             visibleRows={logsPanelRows}
             maxMessageWidth={logs.maxMessageWidth}
             focused={focused === "logs"}
+            listRef={logs.listRef}
           />
 
           <NetworkPanelSection
@@ -92,6 +96,7 @@ export function DashboardContainer() {
             visibleRows={networkPanelRows}
             urlMaxWidth={network.urlMaxWidth}
             focused={focused === "network"}
+            listRef={network.listRef}
           />
 
           <NativePanelSection
@@ -101,6 +106,7 @@ export function DashboardContainer() {
             visibleRows={nativePanelRows}
             maxMessageWidth={native.maxMessageWidth}
             focused={focused === "native"}
+            listRef={native.listRef}
           />
         </Box>
         <Box
@@ -116,32 +122,39 @@ export function DashboardContainer() {
         >
           {focused === "logs" && logs.detailOpen && logs.selectedLog ? (
             <LogDetail
+              ref={logs.detailRef}
               log={logs.selectedLog}
               width={detailContentWidth}
               metaLines={logs.metaLines}
               metaScrollOffset={logs.detailScrollOffset}
               metaVisibleRows={detailBodyVisibleRows}
               copyFeedback={logs.copyFeedback}
+              onCopy={logs.copyBody}
             />
           ) : null}
           {focused === "network" && network.detailOpen && network.selectedLog ? (
             <NetworkDetail
+              ref={network.detailRef}
               log={network.selectedLog}
               width={detailContentWidth}
               bodyLines={network.bodyLines}
               bodyScrollOffset={network.detailScrollOffset}
               bodyVisibleRows={detailBodyVisibleRows}
               copyFeedback={network.copyFeedback}
+              onCopy={network.copyBody}
+              onCopyCurl={network.copyExtra}
             />
           ) : null}
           {focused === "native" && native.detailOpen && native.selectedLog ? (
             <NativeLogDetail
+              ref={native.detailRef}
               log={native.selectedLog}
               width={detailContentWidth}
               metaLines={native.metaLines}
               metaScrollOffset={native.detailScrollOffset}
               metaVisibleRows={detailBodyVisibleRows}
               copyFeedback={native.copyFeedback}
+              onCopy={native.copyBody}
             />
           ) : null}
         </Box>

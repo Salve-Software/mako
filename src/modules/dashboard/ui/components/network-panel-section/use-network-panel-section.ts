@@ -24,6 +24,8 @@ interface UseNetworkPanelSectionParams {
   listColWidth: number;
   listVisibleRows: number;
   detailVisibleRows: number;
+  /** Called when a click lands on this panel while it isn't the focused one. */
+  onFocus: () => void;
 }
 
 export function useNetworkPanelSection({
@@ -32,6 +34,7 @@ export function useNetworkPanelSection({
   listColWidth,
   listVisibleRows,
   detailVisibleRows,
+  onFocus,
 }: UseNetworkPanelSectionParams) {
   const allLogs = useNetworkLogs();
   const logs = useDeviceFiltered(allLogs, getNetworkLogDeviceId);
@@ -39,19 +42,8 @@ export function useNetworkPanelSection({
   const panelInner = Math.max(MIN_PANEL_INNER_WIDTH, listColWidth - PANEL_CHROME_COLS);
   const urlMaxWidth = Math.max(MIN_NETWORK_URL_WIDTH, panelInner - NETWORK_URL_WIDTH_OFFSET);
 
-  const nav = useListNavigation({
-    count: logs.length,
-    visibleRows: listVisibleRows,
-    isActive: focused && isActive,
-  });
-
-  const selectedLog = logs[nav.selectedIndex] ?? null;
-  const bodyLines = useMemo(() => formatBody(selectedLog?.responseBody), [selectedLog]);
-
   const linesRef = useRef<string[]>([]);
   const selectedLogRef = useRef<NetworkLog | null>(null);
-  linesRef.current = bodyLines;
-  selectedLogRef.current = selectedLog;
 
   const onCopyBody = useCallback(() => {
     const log = selectedLogRef.current;
@@ -71,6 +63,23 @@ export function useNetworkPanelSection({
     onCopyExtra,
   });
 
+  const nav = useListNavigation({
+    count: logs.length,
+    visibleRows: listVisibleRows,
+    isActive: focused && isActive,
+    mouseActive: isActive,
+    headerRows: 1,
+    onRowClick: () => {
+      if (!focused) onFocus();
+      detail.openDetail();
+    },
+  });
+
+  const selectedLog = logs[nav.selectedIndex] ?? null;
+  const bodyLines = useMemo(() => formatBody(selectedLog?.responseBody), [selectedLog]);
+  linesRef.current = bodyLines;
+  selectedLogRef.current = selectedLog;
+
   useEffect(() => {
     detail.resetDetailScroll();
   }, [nav.selectedIndex, detail.resetDetailScroll]);
@@ -79,11 +88,15 @@ export function useNetworkPanelSection({
     logs,
     selectedIndex: nav.selectedIndex,
     scrollOffset: nav.scrollOffset,
+    listRef: nav.listRef,
     selectedLog,
     bodyLines,
     urlMaxWidth,
     detailOpen: detail.detailOpen,
     detailScrollOffset: detail.detailScrollOffset,
     copyFeedback: detail.copyFeedback,
+    copyBody: detail.copyBody,
+    copyExtra: detail.copyExtra,
+    detailRef: detail.detailRef,
   };
 }

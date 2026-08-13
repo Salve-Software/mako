@@ -23,6 +23,8 @@ interface UseLogsPanelSectionParams {
   listColWidth: number;
   listVisibleRows: number;
   detailVisibleRows: number;
+  /** Called when a click lands on this panel while it isn't the focused one. */
+  onFocus: () => void;
 }
 
 export function useLogsPanelSection({
@@ -31,6 +33,7 @@ export function useLogsPanelSection({
   listColWidth,
   listVisibleRows,
   detailVisibleRows,
+  onFocus,
 }: UseLogsPanelSectionParams) {
   const allLogs = useJsLogs();
   const logs = useDeviceFiltered(allLogs, getLogDeviceId);
@@ -38,22 +41,8 @@ export function useLogsPanelSection({
   const panelInner = Math.max(MIN_PANEL_INNER_WIDTH, listColWidth - PANEL_CHROME_COLS);
   const maxMessageWidth = Math.max(MIN_LOGS_MESSAGE_WIDTH, panelInner - LOGS_MESSAGE_WIDTH_OFFSET);
 
-  const nav = useListNavigation({
-    count: logs.length,
-    visibleRows: listVisibleRows,
-    isActive: focused && isActive,
-  });
-
-  const selectedLog = logs[nav.selectedIndex] ?? null;
-  const metaLines = useMemo(
-    () => (selectedLog?.metadata ? formatBody(JSON.stringify(selectedLog.metadata)) : []),
-    [selectedLog],
-  );
-
   const linesRef = useRef<string[]>([]);
   const selectedLogRef = useRef<LogEvent | null>(null);
-  linesRef.current = metaLines;
-  selectedLogRef.current = selectedLog;
 
   const onCopyBody = useCallback(() => {
     const log = selectedLogRef.current;
@@ -70,6 +59,25 @@ export function useLogsPanelSection({
     onCopyBody,
   });
 
+  const nav = useListNavigation({
+    count: logs.length,
+    visibleRows: listVisibleRows,
+    isActive: focused && isActive,
+    mouseActive: isActive,
+    onRowClick: () => {
+      if (!focused) onFocus();
+      detail.openDetail();
+    },
+  });
+
+  const selectedLog = logs[nav.selectedIndex] ?? null;
+  const metaLines = useMemo(
+    () => (selectedLog?.metadata ? formatBody(JSON.stringify(selectedLog.metadata)) : []),
+    [selectedLog],
+  );
+  linesRef.current = metaLines;
+  selectedLogRef.current = selectedLog;
+
   useEffect(() => {
     detail.resetDetailScroll();
   }, [nav.selectedIndex, detail.resetDetailScroll]);
@@ -78,11 +86,14 @@ export function useLogsPanelSection({
     logs,
     selectedIndex: nav.selectedIndex,
     scrollOffset: nav.scrollOffset,
+    listRef: nav.listRef,
     selectedLog,
     metaLines,
     maxMessageWidth,
     detailOpen: detail.detailOpen,
     detailScrollOffset: detail.detailScrollOffset,
     copyFeedback: detail.copyFeedback,
+    copyBody: detail.copyBody,
+    detailRef: detail.detailRef,
   };
 }

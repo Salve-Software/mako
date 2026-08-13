@@ -34,7 +34,14 @@ export function useDashboardLayout(): DashboardLayout {
   const detailColWidth = rowWidth - listColWidth;
   const detailContentWidth = Math.max(MIN_CONTENT_WIDTH, detailColWidth - DETAIL_CHROME_COLS);
 
-  const availableRows = rows - APP_OVERHEAD_ROWS - FOOTER_ROWS;
+  // Ink doesn't clip overflow by default: if computed content height ever
+  // exactly equals (or exceeds) the terminal's row count, the terminal
+  // scrolls to accommodate the last line, which silently shifts every mouse
+  // coordinate's row-1 reference (see getAbsoluteLayout). A fixed row-count
+  // budget like APP_OVERHEAD_ROWS is inherently an estimate, so this margin
+  // keeps a safety buffer rather than relying on that estimate being exact.
+  const SAFETY_MARGIN_ROWS = 2;
+  const availableRows = rows - APP_OVERHEAD_ROWS - FOOTER_ROWS - SAFETY_MARGIN_ROWS;
   const logsPanelRows = Math.max(
     MIN_PANEL_ROWS,
     Math.floor((availableRows - PERF_PANEL_ROWS) / STACKED_PANEL_COUNT) - PANEL_CHROME_ROWS,
