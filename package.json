@@ -1,7 +1,7 @@
 {
   "name": "salvetron",
   "description": "Terminal UI debugger for React Native",
-  "version": "0.1.10",
+  "version": "0.2.0",
   "type": "module",
   "packageManager": "yarn@4.9.1",
   "repository": {
