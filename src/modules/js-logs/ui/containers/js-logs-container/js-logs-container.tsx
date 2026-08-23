@@ -24,6 +24,13 @@ const DETAIL_FIXED_ROWS = 3
 const MIN_LIST_ROWS = 10
 const BAR_BORDER_ROWS = 2
 const BAR_CHROME_COLS = 4
+// Ink doesn't clip overflow by default: if computed content height ever
+// exactly equals (or exceeds) the terminal's row count, the terminal
+// scrolls to accommodate the last line, which silently shifts every mouse
+// coordinate's row-1 reference (see getAbsoluteLayout). A fixed row-count
+// budget like OVERHEAD_ROWS is inherently an estimate, so this margin keeps
+// a safety buffer rather than relying on that estimate being exact.
+const SAFETY_MARGIN_ROWS = 2
 
 export function JsLogsContainer() {
   const [cols, rows] = useTerminalSize()
@@ -39,7 +46,7 @@ export function JsLogsContainer() {
     groups: JS_LOG_FILTER_GROUPS,
     isActive: !isDeviceSelectorOpen,
   })
-  const { active } = useFilterChips({
+  const { active, toggle } = useFilterChips({
     groups: JS_LOG_FILTER_GROUPS,
     focusedGroupIndex,
     focusedChipIndex,
@@ -57,7 +64,7 @@ export function JsLogsContainer() {
 
   const barRows = isOpen ? BAR_BORDER_ROWS + 1 + JS_LOG_FILTER_GROUPS.length + 1 : 0
   const clearRows = clearPending ? 1 : 0
-  const availableRows = rows - OVERHEAD_ROWS - barRows - clearRows
+  const availableRows = rows - OVERHEAD_ROWS - barRows - clearRows - SAFETY_MARGIN_ROWS
   const detailHeight = Math.max(DETAIL_FIXED_ROWS + 2, availableRows - MIN_LIST_ROWS)
   const metaVisibleRows = detailHeight - DETAIL_FIXED_ROWS
 
@@ -71,7 +78,7 @@ export function JsLogsContainer() {
     return meta ? `${log.message}\n\n${meta}` : log.message
   }, [])
 
-  const { detailOpen, detailScrollOffset, resetDetailScroll, copyFeedback } = useDetailPanel({
+  const { detailOpen, detailScrollOffset, resetDetailScroll, copyFeedback, copyBody, detailRef, openDetail } = useDetailPanel({
     linesRef: metaLinesRef,
     visibleRows: metaVisibleRows,
     scrollStep: 5,
@@ -83,10 +90,12 @@ export function JsLogsContainer() {
     ? Math.max(MIN_LIST_ROWS, availableRows - detailHeight)
     : availableRows
 
-  const { selectedIndex, scrollOffset } = useListNavigation({
+  const { selectedIndex, scrollOffset, listRef } = useListNavigation({
     count: filtered.length,
     visibleRows: listRows,
     isActive: !isOpen && !isDeviceSelectorOpen,
+    headerRows: 1,
+    onRowClick: openDetail,
   })
 
   const selectedLog = filtered[selectedIndex] ?? null
@@ -109,16 +118,19 @@ export function JsLogsContainer() {
             active={active}
             focusedGroupIndex={focusedGroupIndex}
             focusedChipIndex={focusedChipIndex}
+            onToggle={toggle}
           />
         </Box>
         : null
       }
       <Box flexGrow={1} paddingY={1}>
         <LogList
+          ref={listRef}
           logs={filtered}
           visibleRows={listRows}
           selectedIndex={selectedIndex}
           scrollOffset={scrollOffset}
+          maxMessageWidth={Math.max(20, cols - 24)}
         />
       </Box>
       <Text color="whiteBright" dimColor>/ search · x clear</Text>
@@ -126,12 +138,14 @@ export function JsLogsContainer() {
       {detailOpen && selectedLog
         ?
         <LogDetail
+          ref={detailRef}
           log={selectedLog}
           width={cols}
           metaLines={metaLines}
           metaScrollOffset={detailScrollOffset}
           metaVisibleRows={metaVisibleRows}
           copyFeedback={copyFeedback}
+          onCopy={copyBody}
         />
         : null
       }

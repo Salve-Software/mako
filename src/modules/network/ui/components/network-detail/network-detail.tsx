@@ -1,9 +1,12 @@
 /** @jsxRuntime automatic */
 /** @jsxImportSource react */
 import { Box, Text } from 'ink'
+import type { DOMElement } from 'ink'
+import { forwardRef } from 'react'
 import type { NetworkLog } from '@salve-software/salvetron-types'
 import { METHOD_COLOR, getStatusColor } from '../../../library/constants.js'
 import type { CopyFeedback } from '../../../../../shared/hooks/use-detail-panel.js'
+import { Clickable } from '../../../../../shared/components/clickable/index.js'
 
 interface NetworkDetailProps {
   log: NetworkLog
@@ -12,9 +15,13 @@ interface NetworkDetailProps {
   bodyScrollOffset: number
   bodyVisibleRows: number
   copyFeedback?: CopyFeedback | null
+  onCopy: () => void
+  onCopyCurl: () => void
 }
 
-export function NetworkDetail({ log, width, bodyLines, bodyScrollOffset, bodyVisibleRows, copyFeedback }: NetworkDetailProps) {
+export const NetworkDetail = forwardRef<DOMElement, NetworkDetailProps>(function NetworkDetail(
+  { log, width, bodyLines, bodyScrollOffset, bodyVisibleRows, copyFeedback, onCopy, onCopyCurl }, ref,
+) {
   const time = new Date(log.requestTimestamp).toLocaleTimeString('en', { hour12: false })
   const reqHeaders = Object.entries(log.requestHeaders ?? {})
   const resHeaders = Object.entries(log.responseHeaders ?? {})
@@ -23,6 +30,7 @@ export function NetworkDetail({ log, width, bodyLines, bodyScrollOffset, bodyVis
 
   return (
     <Box
+      ref={ref}
       flexDirection="column"
       borderStyle="single"
       borderColor="gray"
@@ -67,12 +75,20 @@ export function NetworkDetail({ log, width, bodyLines, bodyScrollOffset, bodyVis
       {bodyLines.length > 0
         ?
         <Box flexDirection="column">
-          <Text color="whiteBright" dimColor>
-            {'── body'}
-            {canScroll ? `  [ = scroll up   ] = scroll down  ·  line ${bodyScrollOffset + 1} of ${bodyLines.length}` : ''}
-            {'  ·  c copy · u curl'}
-            {' ──'}
-          </Text>
+          <Box>
+            <Text color="whiteBright" dimColor>
+              {'── body'}
+              {canScroll ? `  [ = scroll up   ] = scroll down  ·  line ${bodyScrollOffset + 1} of ${bodyLines.length}  ·  ` : '  ·  '}
+            </Text>
+            <Clickable onClick={onCopy}>
+              <Text color="whiteBright" dimColor underline>c copy</Text>
+            </Clickable>
+            <Text color="whiteBright" dimColor>{'  ·  '}</Text>
+            <Clickable onClick={onCopyCurl}>
+              <Text color="whiteBright" dimColor underline>u curl</Text>
+            </Clickable>
+            <Text color="whiteBright" dimColor>{' ──'}</Text>
+          </Box>
           {visibleLines.map((line, i) => (
             <Text key={i}>{line}</Text>
           ))}
@@ -81,4 +97,4 @@ export function NetworkDetail({ log, width, bodyLines, bodyScrollOffset, bodyVis
       }
     </Box>
   )
-}
+})

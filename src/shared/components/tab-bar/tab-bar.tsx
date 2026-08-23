@@ -1,6 +1,7 @@
 /** @jsxRuntime automatic */
 /** @jsxImportSource react */
 import { Box, Text } from 'ink'
+import { Clickable } from '../clickable/index.js'
 import type { Tab } from '../../../app.js'
 
 const LABELS: Record<Tab, string> = {
@@ -12,9 +13,10 @@ const LABELS: Record<Tab, string> = {
 
 interface TabBarProps {
   active: Tab
+  onSelect: (tab: Tab) => void
 }
 
-export function TabBar({ active }: TabBarProps) {
+export function TabBar({ active, onSelect }: TabBarProps) {
   return (
     <Box
       borderStyle="single"
@@ -28,11 +30,13 @@ export function TabBar({ active }: TabBarProps) {
       paddingX={1}
     >
       {(Object.keys(LABELS) as Tab[]).map((tab) =>
-        <Text key={tab} bold={tab === active} color={tab === active ? 'cyan' : 'gray'}>
-          {LABELS[tab]}
-        </Text>
+        <Clickable key={tab} onClick={() => onSelect(tab)}>
+          <Text bold={tab === active} color={tab === active ? 'cyan' : 'gray'}>
+            {LABELS[tab]}
+          </Text>
+        </Clickable>
       )}
-      <Text color="gray" dimColor>  Tab to switch</Text>
+      <Text color="gray" dimColor>  Tab to switch · click a tab</Text>
     </Box>
   )
 }
